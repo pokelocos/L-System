@@ -13,20 +13,16 @@ MonoBehaviour:
   m_Name: Cerezo
   m_EditorClassIdentifier: 
   rules:
-  - input: c(x)
-    output: 't(x)[c(0)]+[c(0)] '
-    condition: x > 2
+  - input: p(x)
+    output: p(x)[+p(0)]p(x)[-p(0)]
+    condition: x > 3
     weight: 1
-  - input: c(x)
-    output: t(x)l(x)c(x+a)
+  - input: p(x)
+    output: t(x)p(x+a)
     condition: 
     weight: 1
   - input: t(x)
     output: t(x)
-    condition: 
-    weight: 1
-  - input: l(x)
-    output: l(x)
     condition: 
     weight: 1
   generalVariables:
