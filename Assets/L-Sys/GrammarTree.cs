@@ -11,14 +11,14 @@ using UnityEngine.UIElements;
 using UnityEditor;
 #endif
 
+/// <summary>
+/// Utilidades para manejar parámetros en cadenas de texto y expresiones matemáticas.
+/// </summary>
 public static class ParametrizedUtilities
 {
     /// <summary>
-    /// Regresa el contenido dentrov de parentesis, permite que 
-    /// existan parentesis anidados.
+    /// Extrae el contenido dentro de paréntesis, permitiendo paréntesis anidados.
     /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
     public static (string, int) ExtractFromParentheses(string input)
     {
         if (string.IsNullOrEmpty(input) || input[0] != '(')
@@ -34,7 +34,6 @@ public static class ParametrizedUtilities
 
             if (openParentheses == 0)
             {
-                // Excluye los paréntesis externos
                 return (input.Substring(1, i - 1), i);
             }
         }
@@ -43,56 +42,31 @@ public static class ParametrizedUtilities
     }
 
     /// <summary>
-    /// Pregunta al char en un string si esta parametrizada.
+    /// Verifica si un carácter en una cadena está parametrizado.
     /// </summary>
-    /// <param name="input"></param>
-    /// <param name="index"></param>
-    /// <returns></returns>
     public static bool IsParameterized(string input, int index)
     {
-        if (index + 1 >= input.Length)
-            return false;
-
-        return input[index + 1] == '(';
+        return index + 1 < input.Length && input[index + 1] == '(';
     }
 
     /// <summary>
-    /// Recive un string que contine multiples funciones,
-    /// retorna una lista de tuplas, donde cada tupla contiene
-    /// el nombre de la funcion y una array de parametros.
+    /// Extrae funciones parametrizadas de una cadena.
     /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
     public static List<(string, string[])> GetParams(string input)
     {
-        var toR = new List<(string, string[])>();
-
+        var result = new List<(string, string[])>();
         string pattern = @"\((.*?)\)";
         var matches = Regex.Matches(input, pattern);
 
         foreach (Match match in matches)
         {
             string functionName = match.Groups[1].Value;
-            string[] parameters = match.Groups[2].Value.Replace(" ","").Split(',');
+            string[] parameters = match.Groups[1].Value.Replace(" ", "").Split(',');
 
-            toR.Add((functionName, parameters));
+            result.Add((functionName, parameters));
         }
 
-        return toR;
-    }
-
-    public static (List<string>, int) GetParams(string input, int index)
-    {
-        for (int j = index; j < input.Length; j++)
-        {
-            if (input[j] == ')')
-            {
-                var sub = input.Substring(index, j - index).Split(',');
-                return (sub.ToList(), j);
-            }
-        }
-
-        return (null, index);
+        return result;
     }
 }
 
@@ -229,23 +203,3 @@ public class GrammarTree : ScriptableObject
         return output;
     }
 }
-
-/*
-#if UNITY_EDITOR
-[CustomEditor(typeof(GrammarTree))]
-public class GrammarTreeEditor : Editor
-{
-    public override VisualElement CreateInspectorGUI()
-    {
-        var root = new VisualElement();
-        var tree = (GrammarTree)target;
-
-        // Add rules
-        var ruleList = new ListView(tree.rules, 20, () => new VisualElement());
-
-
-        return root;
-    }
-}
-#endif
-*/

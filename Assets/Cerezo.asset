@@ -13,19 +13,23 @@ MonoBehaviour:
   m_Name: Cerezo
   m_EditorClassIdentifier: 
   rules:
-  - input: p(x)
-    output: p(x)[+p(0)]p(x)[-p(0)]
-    condition: x > 3
+  - input: A(x)
+    output: F[B(x)][+A(x-1)][-A(x-1)]
+    condition: x > 0
     weight: 1
-  - input: p(x)
-    output: t(x)p(x+a)
-    condition: 
+  - input: B(x)
+    output: F[+B(x-1)][-B(x-1)]
+    condition: x > 0
     weight: 1
-  - input: t(x)
-    output: t(x)
-    condition: 
+  - input: A(x)
+    output: F
+    condition: x == 0
+    weight: 1
+  - input: B(x)
+    output: F
+    condition: x == 0
     weight: 1
   generalVariables:
   - variable: a
-    value: 1
+    value: 30
   isStochastic: 0

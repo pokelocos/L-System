@@ -6,124 +6,85 @@ using UnityEditor;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 
+/// <summary>
+/// Clase principal para el sistema de árbol L-System.
+/// Se encarga de inicializar los parámetros y generar el árbol.
+/// </summary>
 public class TreeLSys : MonoBehaviour
 {
+    // Árbol gramatical para generar el sistema L-System
     public GrammarTree grammarTree;
+
+    // Número de generaciones para derivar el árbol
     public int generations = 5;
-    
-    [TextArea]
-    public string startInput = "p";
-    [TextArea]
-    public string output = "";
 
+    [TextArea]
+    public string startInput = "p"; // Entrada inicial para la gramática
+
+    [TextArea]
+    public string output = ""; // Salida después de aplicar las reglas
+
+    // Generador para la representación 3D
     public Generator generator = new();
-
 }
 
 #if UNITY_EDITOR
 [UnityEditor.CustomEditor(typeof(TreeLSys))]
 public class TreeLSysEditor : UnityEditor.Editor
 {
-    /*
-    public override VisualElement CreateInspectorGUI()
-    {
-        // Init root element
-        var root = new VisualElement();
-        var sys = (TreeLSys)target;
-
-
-        // Init base variables
-        var startPos = sys.transform.position + Vector3.zero;
-        var startDir = sys.transform.up + Vector3.zero;
-
-        // Object fields for the grammar tree
-        var objField = new ObjectField("Grammar Tree");
-        objField.objectType = typeof(GrammarTree);
-        objField.value = sys.grammarTree;
-        objField.RegisterValueChangedCallback(evt => sys.grammarTree = (GrammarTree)evt.newValue);
-        root.Add(objField);
-
-        // Add GramamrTree editor
-        var box = SimpleBox(new Color(0.15f, 0.15f, 0.15f), 4, 4);
-        var soEditor = CreateEditor(sys.grammarTree);
-
-        // LO DEJO HASTA AQUI POR AHORA DESUES LO RETOMARE SI ES NECESARIO
-
-        root.Add(box);
-
-        return root;
-    }
-
-    private VisualElement SimpleBox(Color color, float padding, int radius)
-    {
-        var box = new VisualElement();
-        box.style.flexGrow = 1;
-        box.style.flexShrink = 1;
-        box.style.backgroundColor = color;
-        box.style.paddingTop = padding;
-        box.style.paddingBottom = padding;
-        box.style.paddingLeft = padding;
-        box.style.paddingRight = padding;
-        box.style.borderTopLeftRadius = radius;
-        box.style.borderTopRightRadius = radius;
-        box.style.borderBottomLeftRadius = radius;
-        box.style.borderBottomRightRadius = radius;
-        return box;
-    }
-    */
-
+    /// <summary>
+    /// Personalización del Inspector para TreeLSys.
+    /// Permite generar el sistema L-System y renderizarlo en 3D.
+    /// </summary>
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
 
         var sys = (TreeLSys)target;
+
+        // Guardar posición y dirección inicial
         var startPos = sys.transform.position + Vector3.zero;
         var startDir = sys.transform.up + Vector3.zero;
 
-        GUIStyle boxStyle = new GUIStyle(EditorStyles.helpBox);
-        boxStyle.normal.background = MakeTex(2, 2, new Color(0.15f, 0.15f, 0.15f));
-        boxStyle.padding = new RectOffset(10, 10, 10, 10);
+        // Estilo para cuadros de ayuda
+        GUIStyle boxStyle = new GUIStyle(EditorStyles.helpBox)
+        {
+            normal = { background = MakeTex(2, 2, new Color(0.15f, 0.15f, 0.15f)) },
+            padding = new RectOffset(10, 10, 10, 10)
+        };
 
-        /*
-        // Draw the grammar tree editor in THIS inspector
-        GUILayout.Label("ScriptableObject Inspector", EditorStyles.boldLabel);
-        GUILayout.BeginVertical(boxStyle);
-        CreateEditor(sys.grammarTree).OnInspectorGUI();
-        GUILayout.EndVertical();
-        */
-
+        // Botón para generar derivaciones
         if (GUILayout.Button("Generate output (derive)"))
         {
             Debug.Log("Start derive");
 
-            // Derive the grammar tree
+            // Derivar el árbol gramatical
             var generations = Deriver.Derive(sys.grammarTree, sys.startInput, sys.generations);
             var axiom = generations[generations.Count - 1];
             sys.output = axiom;
 
-            var msg = "";
-            generations.ForEach(g => msg += g + "\n");
+            var msg = string.Join("\n", generations);
             Debug.Log(msg);
             Debug.Log("Axiom: " + axiom);
-
             Debug.Log("Output generated");
         }
 
+        // Botón para generar la representación 3D
         if (GUILayout.Button("Generate output in 3D"))
         {
             Debug.Log("Start 3D generation");
 
-            // Save initial position and direction
+            // Guardar posición y rotación inicial
             var _pos = sys.transform.position + Vector3.zero;
             var _dir = sys.transform.rotation;
 
-            // Init actions
+            // Inicializar acción de generación
             sys.generator.generationAction = sys.generator.InitGenerateAction();
 
-            // Generate the tree in the scene
+            // Generar el árbol en 3D
             var tree = sys.generator.GenerateTree(sys.output, sys.transform);
 
-            // Reset position and direction
+            // Restaurar posición y rotación
             sys.transform.position = _pos;
             sys.transform.rotation = _dir;
 
@@ -131,7 +92,9 @@ public class TreeLSysEditor : UnityEditor.Editor
         }
     }
 
-    // CHANGE: replace this method with uitoolkit UI elements
+    /// <summary>
+    /// Crea una textura sólida para estilos de GUI.
+    /// </summary>
     private Texture2D MakeTex(int width, int height, Color col)
     {
         Color[] pix = new Color[width * height];
@@ -144,5 +107,4 @@ public class TreeLSysEditor : UnityEditor.Editor
         return result;
     }
 }
-
 #endif
