@@ -1,205 +1,207 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
 using System.Linq;
-using System.Text.RegularExpressions;
-using Utils = ParametrizedUtilities;
-using NCalc;
-using UnityEngine.UIElements;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
+using NCalc;  // Se usa para evaluar expresiones lógicas y matemáticas con parámetros.
 /// <summary>
-/// Utilidades para manejar parámetros en cadenas de texto y expresiones matemáticas.
+/// Representa un conjunto de reglas de un L-System, incluyendo variables globales
+/// y la posibilidad de que sea un sistema estocástico.
 /// </summary>
-public static class ParametrizedUtilities
-{
-    /// <summary>
-    /// Extrae el contenido dentro de paréntesis, permitiendo paréntesis anidados.
-    /// </summary>
-    public static (string, int) ExtractFromParentheses(string input)
-    {
-        if (string.IsNullOrEmpty(input) || input[0] != '(')
-            return (string.Empty, 0);
-
-        int openParentheses = 0;
-        for (int i = 0; i < input.Length; i++)
-        {
-            if (input[i] == '(')
-                openParentheses++;
-            else if (input[i] == ')')
-                openParentheses--;
-
-            if (openParentheses == 0)
-            {
-                return (input.Substring(1, i - 1), i);
-            }
-        }
-
-        return (string.Empty, 0);
-    }
-
-    /// <summary>
-    /// Verifica si un carácter en una cadena está parametrizado.
-    /// </summary>
-    public static bool IsParameterized(string input, int index)
-    {
-        return index + 1 < input.Length && input[index + 1] == '(';
-    }
-
-    /// <summary>
-    /// Extrae funciones parametrizadas de una cadena.
-    /// </summary>
-    public static List<(string, string[])> GetParams(string input)
-    {
-        var result = new List<(string, string[])>();
-        string pattern = @"\((.*?)\)";
-        var matches = Regex.Matches(input, pattern);
-
-        foreach (Match match in matches)
-        {
-            string functionName = match.Groups[1].Value;
-            string[] parameters = match.Groups[1].Value.Replace(" ", "").Split(',');
-
-            result.Add((functionName, parameters));
-        }
-
-        return result;
-    }
-}
-
 [CreateAssetMenu(fileName = "New Grammar Tree", menuName = "Create Grammar Tree")]
 public class GrammarTree : ScriptableObject
 {
-    [System.Serializable]
+    /// <summary>
+    /// Representa una variable global en la gramática, con un nombre (variable) y un valor numérico.
+    /// </summary>
+    [Serializable]
     public class GeneralVariables
     {
         public string variable;
         public float value;
     }
 
-    [System.Serializable]
+    /// <summary>
+    /// Una regla de producción (o reescritura) en la gramática.
+    /// Incluye la cadena de entrada, la cadena de salida, una condición y un peso para estocasticidad.
+    /// </summary>
+    [Serializable]
     public class Rule
     {
+        /// <summary> El símbolo (o secuencia) de entrada que activa la regla. </summary>
         public string input;
+        /// <summary> La salida (string) que se producirá cuando se aplique la regla. </summary>
         public string output;
+        /// <summary> Expresión lógica que, si está presente, debe cumplirse para aplicar la regla. </summary>
         public string condition;
+        /// <summary> Peso usado en gramáticas estocásticas, para seleccionar reglas de forma aleatoria. </summary>
         public float weight = 1f;
 
+        /// <summary>
+        /// Constructor por defecto (útil si quieres crear reglas por código).
+        /// </summary>
+        /// <param name="input">Simbolo de entrada.</param>
+        /// <param name="output">Reemplazo (string) de salida.</param>
         public Rule(string input, string output)
         {
             this.input = input;
             this.output = output;
         }
 
+        /// <summary>
+        /// Evalúa si la condición (si existe) se cumple con los parámetros dados.
+        /// </summary>
+        /// <param name="currentParams">Los valores actuales de los parámetros extraídos del símbolo en la cadena.</param>
+        /// <param name="generalVariables">Lista de variables globales definidas en la gramática.</param>
+        /// <returns>True si se cumple la condición o si no hay condición; False en caso contrario.</returns>
         public bool CheckCondition(string[] currentParams, List<GeneralVariables> generalVariables)
         {
-            if (string.IsNullOrEmpty(condition) || condition == "")
+            // Si la regla no tiene condición, la cumple automáticamente.
+            if (string.IsNullOrEmpty(condition))
                 return true;
 
-            // Init expression
+            // Creamos una expresión de NCalc con la condición.
             Expression expression = new Expression(condition);
 
-            // Add all paremeters from condition
+            // Extrae los parámetros definidos en 'input'. 
+            // Ej: si input es 'F(x,y)' => iParms = { "x", "y" }
             var iSub = input.Substring(1);
-            var (a, b) = Utils.ExtractFromParentheses(iSub);
-            var iParms = a.Split(';');
+            var (extractedParams, _) = ParametrizedUtilities.ExtractFromParentheses(iSub);
+            var iParms = extractedParams.Split(';');
+
+            // Asigna a la expresión los valores de cada parámetro local.
             for (int k = 0; k < iParms.Length; k++)
             {
-                expression.Parameters[iParms[k]] = float.Parse(currentParams[k]);
+                float value = float.Parse(currentParams[k]);
+                expression.Parameters[iParms[k]] = value;
             }
 
-            // Add all parameters from general variables
+            // También asigna los valores de las variables globales.
             foreach (var g in generalVariables)
             {
-                expression.Parameters.Add(g.variable, g.value);
+                expression.Parameters[g.variable] = g.value;
             }
 
-            // Evaluate the expression
-            var result = (bool)expression.Evaluate();
+            // Evalúa la expresión. Se asume que es booleana (por ej. "x>2 && y<5").
+            bool result = (bool)expression.Evaluate();
             return result;
         }
 
+        /// <summary>
+        /// Genera la cadena de salida para la regla, evaluando las expresiones 
+        /// de los parámetros en 'output' con los valores proporcionados.
+        /// </summary>
+        /// <param name="currentParams">Los valores actuales de los parámetros para este símbolo.</param>
+        /// <param name="generalVariables">Lista de variables globales definidas.</param>
+        /// <returns>La cadena resultante tras evaluar cada parámetro.</returns>
         public string CalcOutput(string[] currentParams, List<GeneralVariables> generalVariables)
         {
-            var toR = "";
+            string resultString = "";
 
-            // Get all the parameters from RULE INPUT ecuation
+            // Ej: si input = "F(x,y)", iParms = { "x", "y" }
             var iSub = input.Substring(1);
-            var (a, b) = Utils.ExtractFromParentheses(iSub);
-            var iParms = a.Split(';'); 
+            var (extractedParams, _) = ParametrizedUtilities.ExtractFromParentheses(iSub);
+            var iParms = extractedParams.Split(';');
 
+            // Recorre cada carácter de la cadena 'output' y evalúa sus parámetros si los tiene.
             for (int i = 0; i < output.Length; i++)
             {
-                if (Utils.IsParameterized(output, i))
+                // Chequea si es un símbolo parametrizado en 'output'.
+                if (ParametrizedUtilities.IsParameterized(output, i))
                 {
-                    toR += output[i] + "(";
+                    // Por ejemplo, si la salida es 'G(a+1;b-2)', 
+                    // agregamos 'G(' a la cadena...
+                    resultString += output[i] + "(";
 
-                    // Get all the ecuations from RULE OUTPUT ecuation
+                    // Extrae el contenido dentro de los paréntesis.
                     var oSub = output.Substring(i + 1);
-                    var (parms, end) = Utils.ExtractFromParentheses(oSub);
+                    var (parms, end) = ParametrizedUtilities.ExtractFromParentheses(oSub);
                     var oParms = parms.Split(';');
 
+                    // Cada parámetro en 'oParms' es una expresión de NCalc que se evaluará.
                     for (int j = 0; j < oParms.Length; j++)
                     {
-                        // Generate experssion for each output parameter
                         Expression expression = new Expression(oParms[j]);
 
-                        // Add all paremeters from current ecuation
+                        // Asigna las variables locales.
                         for (int k = 0; k < iParms.Length; k++)
                         {
-                            expression.Parameters[iParms[k]] = float.Parse(currentParams[k]);
+                            float value = float.Parse(currentParams[k]);
+                            expression.Parameters[iParms[k]] = value;
                         }
 
-                        // Add all parameters from general variables
+                        // Asigna las variables globales.
                         foreach (var g in generalVariables)
                         {
-                            expression.Parameters.Add(g.variable, g.value);
+                            expression.Parameters[g.variable] = g.value;
                         }
 
-                        // Evaluate the expression
-                        var result = expression.Evaluate();
+                        // Evalúa el resultado numérico.
+                        var evalResult = expression.Evaluate();
+                        float evaluatedNumber = Convert.ToSingle(evalResult);
 
-                        var res = Convert.ToSingle(result);
-                        toR += res + ";";
+                        // Añade el resultado + ';' para separar parámetros.
+                        resultString += evaluatedNumber + ";";
                     }
 
-                    toR = toR.Remove(toR.Length - 1);
-                    toR += ")";
+                    // Elimina el último punto y coma sobrante.
+                    // (se podría usar un StringBuilder para mayor eficiencia).
+                    resultString = resultString.Remove(resultString.Length - 1);
 
+                    // Cierra paréntesis
+                    resultString += ")";
+
+                    // Avanza el índice 'i' para saltar la parte de paréntesis ya procesada.
                     i += (end + 1);
                 }
                 else
                 {
-                    toR += output[i];
+                    // Si no está parametrizado, simplemente añade el carácter.
+                    resultString += output[i];
                 }
-
             }
 
-            return toR;
+            return resultString;
         }
-
     }
 
+    /// <summary>
+    /// Lista de reglas que componen la gramática.
+    /// </summary>
     public List<Rule> rules;
+
+    /// <summary>
+    /// Lista de variables globales que pueden ser usadas en las reglas 
+    /// (ej. "gravity", "angle", etc.).
+    /// </summary>
     public List<GeneralVariables> generalVariables;
+
+    /// <summary>
+    /// Si es 'true', las reglas se escogerán de forma aleatoria según su 'weight'
+    /// en caso de que haya múltiples reglas para el mismo símbolo.
+    /// </summary>
     public bool isStochastic = false;
 
-    public List<Rule> GetRules(char c) //, (string,int) contex)
+    /// <summary>
+    /// Devuelve todas las reglas que tengan como 'input[0]' el carácter 'c'.
+    /// (No contempla contexto en este ejemplo).
+    /// </summary>
+    /// <param name="c">Carácter a buscar.</param>
+    /// <returns>Lista de reglas cuyo 'input[0]' coincida con 'c'.</returns>
+    public List<Rule> GetRules(char c)
     {
-        List<Rule> output = new();
+        List<Rule> matchedRules = new();
 
         foreach (var rule in rules)
         {
-            // FIX: Esto no concidera ni rules con contexto
-            if (rule.input[0] == c) 
+            // Si la primera letra de 'rule.input' coincide con 'c', la añadimos.
+            // (No considera reglas con contexto adicional. 
+            // Ej. "A < B > C" - eso requeriría lógica adicional.)
+            if (rule.input[0] == c)
             {
-                output.Add(rule);
+                matchedRules.Add(rule);
             }
         }
 
-        return output;
+        return matchedRules;
     }
 }

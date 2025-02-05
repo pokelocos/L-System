@@ -1,104 +1,118 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Windows;
+// Asegúrate de que este 'using UnityEngine.Windows;' sea necesario; 
+// a menudo no se requiere si no usas nada de 'Windows'.
 using Utils = ParametrizedUtilities;
 
-public static class CollectionUtilities
-{
-    public static T RandomRullete<T>( this IEnumerable<T> collection, Func<T,float> aa)
-    {
-        var max = 0f;
-
-        foreach (var item in collection)
-            max += aa(item);
-
-        var random = UnityEngine.Random.Range(0f, max);
-
-        var acumulated = 0f;
-        foreach (var item in collection)
-        {
-            acumulated += aa(item);
-            if (random <= acumulated)
-            {
-                return item;
-            }
-        }
-
-        return default(T);
-    }
-}
-
+/// <summary>
+/// Clase estática que se encarga de derivar (aplicar iteraciones) 
+/// de un sistema L-System, basándose en reglas y parámetros.
+/// </summary>
 public static class Deriver
 {
+    /// <summary>
+    /// Deriva el axioma de un L-System una cantidad de generaciones, 
+    /// devolviendo la cadena resultante en cada iteración.
+    /// </summary>
+    /// <param name="grammar">Objeto que contiene las reglas de producción del sistema.</param>
+    /// <param name="axiom">Cadena inicial (axioma) desde la que se parte para derivar.</param>
+    /// <param name="amount">Número de iteraciones (generaciones) que se van a aplicar.</param>
+    /// <returns>Lista de strings que representan las cadenas resultantes 
+    /// en cada generación, incluyendo la generación 0 (el axioma inicial).</returns>
     public static List<string> Derive(GrammarTree grammar, string axiom, int amount)
     {
-        Stack<tortoiseData> pushdown = new();
+        // Ejemplo de un stack que no estás usando actualmente. 
+        // Si no lo usas, podrías eliminarlo, o en caso de planificar usarlo, coméntalo:
+        // Stack<tortoiseData> pushdown = new();
+
+        // Este listado almacenará la cadena de cada generación (iteración).
         List<string> generations = new();
 
-        var current = axiom;
+        // 'current' representa la cadena actual que se derivará en cada iteración.
+        string current = axiom;
+
+        // Agrega la cadena inicial como la primera 'generación'.
         generations.Add(current);
 
-        // Iterate over the amount of generations
+        // Repite 'amount' veces el proceso de derivación.
         for (int i = 0; i < amount; i++)
         {
-            var outputGen = "";
+            // Acumula la nueva cadena generada en esta iteración.
+            string outputGen = "";
 
-            // Iterate over the char in the current generation
+            // Recorre carácter a carácter la cadena actual.
             for (int j = 0; j < current.Length; j++)
             {
-                // Check if the current character is parameterized
+                // Verifica si el carácter en la posición j está "parametrizado".
+                // Dependemos de una clase/struct 'ParametrizedUtilities' (Utils) que desconozco,
+                // pero suponemos que 'IsParameterized' indica si el carácter es algo como 'F(...)', 'G(...)', etc.
                 if (Utils.IsParameterized(current, j))
                 {
-                    // Extract the parameters from the current character
-                    var sub = current.Substring(j + 1);
-                    var (parm, end) = Utils.ExtractFromParentheses(sub);
-                    var exps = parm.Split(';');
+                    // Extrae la parte de la cadena donde están los paréntesis y sus parámetros.
+                    string substring = current.Substring(j + 1);
+                    var (parameters, endIndex) = Utils.ExtractFromParentheses(substring);
 
-                    // Get all the rules for the current character
+                    // Separa los distintos parámetros en 'exps' usando ';' como separador.
+                    var exps = parameters.Split(';');
+
+                    // Obtiene las reglas asociadas al símbolo actual.
                     var rules = grammar.GetRules(current[j]);
 
-                    // Check if the rules are valid
-                    rules = rules.Where(x => x.CheckCondition(exps,grammar.generalVariables)).ToList();
+                    // Filtra solo las reglas que cumplan la condición (por ejemplo, 
+                    // que coincidan con el número de parámetros esperado, etc.).
+                    rules = rules.Where(rule => rule.CheckCondition(exps, grammar.generalVariables)).ToList();
 
+                    // Si no hay reglas aplicables, copio directamente el símbolo con sus parámetros.
                     if (rules.Count <= 0)
                     {
-                        outputGen += current.Substring(j, 1 + (end + 1));
+                        // El '+ (endIndex + 1)' es para saltar el símbolo y el contenido de paréntesis.
+                        outputGen += current.Substring(j, 1 + (endIndex + 1));
                     }
                     else
                     {
+                        // Si la gramática es estocástica, elige una regla al azar con probabilidad 'weight'.
+                        // De lo contrario, elige la primera regla.
+                        var rule = grammar.isStochastic
+                            ? rules.RandomRullete(r => r.weight)
+                            : rules[0];
 
-                         var rule = grammar.isStochastic? rules.RandomRullete(x => x.weight) : rules[0];
-
-                        var _out = rule.CalcOutput(exps, grammar.generalVariables);
-                        outputGen += _out;
+                        // Calcula la salida final (string) de esa regla.
+                        string result = rule.CalcOutput(exps, grammar.generalVariables);
+                        outputGen += result;
                     }
 
-                    j += (end + 1);
+                    // Asegúrate de saltarte correctamente la porción ya procesada.
+                    j += (endIndex + 1);
                 }
                 else
                 {
-                    // Get all the rules for the current character
+                    // El carácter actual NO está parametrizado.
+                    // Obtén las reglas aplicables.
                     var rules = grammar.GetRules(current[j]);
+
                     if (rules.Count <= 0)
                     {
+                        // Si no hay reglas, pasa el mismo símbolo.
                         outputGen += current[j];
                     }
                     else
                     {
-                        outputGen += rules[0].output; // FIX: esto solo conidera el primer rule
+                        // Toma la primera regla. (Nota: podrías soportar varias reglas no-parametrizadas también).
+                        outputGen += rules[0].output;
                     }
                 }
             }
 
-            // Add the output generation to the list
+            // Al final de esta iteración, guarda la cadena resultante en la lista 'generations'.
             generations.Add(outputGen);
-            current = outputGen;
 
+            // 'current' se actualiza para la siguiente iteración.
+            current = outputGen;
         }
 
+        // Devuelve todas las generaciones, incluida la 0.
         return generations;
     }
 }
