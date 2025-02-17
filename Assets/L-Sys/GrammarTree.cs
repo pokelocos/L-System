@@ -102,14 +102,16 @@ public class GrammarTree : ScriptableObject
             var (extractedParams, _) = ParametrizedUtilities.ExtractFromParentheses(iSub);
             var iParms = extractedParams.Split(';');
 
-            // Recorre cada carácter de la cadena 'output' y evalúa sus parámetros si los tiene.
+            // Define aquí qué símbolos paramétricos vas a etiquetar.
+            // Por ejemplo, F, B, A, G...
+            char[] paramSymbols = { 'F', 'B', 'A', 'G' };
+
             for (int i = 0; i < output.Length; i++)
             {
                 // Chequea si es un símbolo parametrizado en 'output'.
                 if (ParametrizedUtilities.IsParameterized(output, i))
                 {
-                    // Por ejemplo, si la salida es 'G(a+1;b-2)', 
-                    // agregamos 'G(' a la cadena...
+                    // Añadimos la letra, ej. 'G'
                     resultString += output[i] + "(";
 
                     // Extrae el contenido dentro de los paréntesis.
@@ -144,11 +146,21 @@ public class GrammarTree : ScriptableObject
                     }
 
                     // Elimina el último punto y coma sobrante.
-                    // (se podría usar un StringBuilder para mayor eficiencia).
                     resultString = resultString.Remove(resultString.Length - 1);
 
                     // Cierra paréntesis
                     resultString += ")";
+
+                    // ---- COMENTARIO NUEVO ----
+                    // Ahora agregamos "#ID" si el símbolo es uno de los paramSymbols (F, B, A, G...).
+                    // output[i] es la letra que detectamos, ej 'B' o 'A'.
+                    if (paramSymbols.Contains(output[i]))
+                    {
+                        int newId = Deriver.GenerateId();
+                        // Insertamos el ID
+                        resultString += "#" + newId;
+                    }
+                    // ---- FIN CAMBIO ----
 
                     // Avanza el índice 'i' para saltar la parte de paréntesis ya procesada.
                     i += (end + 1);

@@ -14,31 +14,24 @@ public class Generator
         public List<GameObject> prefs;
     }
 
-    // Ángulos y segmentSize expuestos en el Inspector
     public float alphaAngle = 45f;
     public float betaAngle = 60f;
     public float segmentSize = 1f;
-
     public List<PrefPairs> prefPairs = new();
 
     /// <summary>
-    /// Generación de acciones. Cambiamos para que devuelvan SubStruct 
-    /// (en lugar de 'void'), así podemos reasignar 'last'.
+    /// Cada acción retorna el nuevo SubStruct creado (o el mismo 'last' si no se crea nada nuevo).
     /// </summary>
     [System.Serializable]
     public class GenerationAction
     {
         public char variable;
-
-        // OJO: en vez de Action<...>, lo cambiamos a Func<...> que retorna SubStruct.
         public Func<int, Transform, Stack<tortoiseData>, TreeStruct, SubStruct, List<float>, SubStruct> action;
     }
-
     public List<GenerationAction> generationAction = new();
 
     /// <summary>
-    /// Cambiamos la firma: en vez de 'void SimpleGeneration(...)',
-    /// la hacemos 'SubStruct SimpleGeneration(...)' y retornamos el nuevo SubStruct.
+    /// Instancia y configura un segmento (prefab) para el símbolo dado, y devuelve el SubStruct creado.
     /// </summary>
     public SubStruct SimpleGeneration(
         int index,
@@ -50,230 +43,159 @@ public class Generator
         string value)
     {
         float segSize = this.segmentSize;
-
-        // Busca el Prefab correspondiente (F, A, B, etc.)
         var tPart = prefPairs.FirstOrDefault(t => t.name == value);
         if (tPart == null || tPart.prefs.Count == 0)
         {
             Debug.LogWarning($"No Prefab found for value: {value}");
-            return last;  // Retornamos el 'last' original si no hallamos prefab
+            return last;
         }
-
-        // Instanciamos el prefab en la posición actual de la tortuga
-        var part = GameObject.Instantiate(
-            tPart.prefs[0],
-            tortoise.position,
-            Quaternion.identity
-        );
-
-        // Lo hacemos hijo del transform de 'last'
+        var part = GameObject.Instantiate(tPart.prefs[0], tortoise.position, Quaternion.identity);
         part.transform.SetParent(last.transform, worldPositionStays: true);
-
-        // Ajuste de escala local
         part.transform.localScale = Vector3.one;
         var newScale = part.transform.localScale;
         newScale.y = segSize;
         part.transform.localScale = newScale;
-
-        // Orientación: up = dirección de la tortuga
         part.transform.up = tortoise.up;
 
-        // Creamos el SubStruct
         var sub = part.AddComponent<SubStruct>();
         sub.size = segSize;
-        sub.index = index;
-        sub.start = tortoise.position;
-        sub.dir = tortoise.up;
         sub.parent = tree;
-
-        // Lo añadimos al árbol
+        // Aquí podrías asignar otros valores (como orderIndex si lo necesitas)
         tree.subStructs.Add(sub);
 
-        // Movemos la tortuga hacia arriba segSize
         tortoise.position += tortoise.up * segSize;
-
-        // Retornamos el nuevo SubStruct para reasignar 'last'
         return sub;
     }
 
     /// <summary>
-    /// Inicializa las acciones de cada símbolo. 
-    /// Ahora usamos Func<...> que retorna SubStruct, 
-    /// en lugar de Action<...>.
+    /// Inicializa las acciones para cada símbolo.
     /// </summary>
     public List<GenerationAction> InitGenerateAction()
     {
         var toR = new List<GenerationAction>();
 
-        // Aquí definimos las rotaciones (+, -, &, ^, \, /) 
-        // que simplemente devuelven el 'last' sin cambiarlo 
-        // (porque no crean un segmento).
+        // Rotaciones: actualizan la tortuga y devuelven 'last' sin crear nuevos segmentos.
         toR.AddRange(new[]
         {
-            new GenerationAction()
-            {
+            new GenerationAction() {
                 variable = '+',
-                action = (i, tortoise, pushdown, tree, last, _params) =>
-                {
-                    float angle = (_params.Count > 0)
-                        ? _params[0]
-                        : UnityEngine.Random.Range(15f, 45f);
+                action = (i, tortoise, pushdown, tree, last, _params) => {
+                    float angle = (_params.Count > 0) ? _params[0] : UnityEngine.Random.Range(15f, 45f);
                     tortoise.Rotate(tortoise.forward, angle);
-
-                    // No se crea un nuevo segmento, devolvemos el 'last' tal cual
                     return last;
                 }
             },
-            new GenerationAction()
-            {
+            new GenerationAction() {
                 variable = '-',
-                action = (i, tortoise, pushdown, tree, last, _params) =>
-                {
-                    float angle = (_params.Count > 0)
-                        ? _params[0]
-                        : UnityEngine.Random.Range(15f, 45f);
+                action = (i, tortoise, pushdown, tree, last, _params) => {
+                    float angle = (_params.Count > 0) ? _params[0] : UnityEngine.Random.Range(15f, 45f);
                     tortoise.Rotate(tortoise.forward, -angle);
                     return last;
                 }
             },
-            new GenerationAction()
-            {
+            new GenerationAction() {
                 variable = '&',
-                action = (i, tortoise, pushdown, tree, last, _params) =>
-                {
-                    float angle = (_params.Count > 0)
-                        ? _params[0]
-                        : UnityEngine.Random.Range(15f, 45f);
+                action = (i, tortoise, pushdown, tree, last, _params) => {
+                    float angle = (_params.Count > 0) ? _params[0] : UnityEngine.Random.Range(15f, 45f);
                     tortoise.Rotate(tortoise.right, angle);
                     return last;
                 }
             },
-            new GenerationAction()
-            {
+            new GenerationAction() {
                 variable = '^',
-                action = (i, tortoise, pushdown, tree, last, _params) =>
-                {
-                    float angle = (_params.Count > 0)
-                        ? _params[0]
-                        : UnityEngine.Random.Range(15f, 45f);
+                action = (i, tortoise, pushdown, tree, last, _params) => {
+                    float angle = (_params.Count > 0) ? _params[0] : UnityEngine.Random.Range(15f, 45f);
                     tortoise.Rotate(tortoise.right, -angle);
                     return last;
                 }
             },
-            new GenerationAction()
-            {
+            new GenerationAction() {
                 variable = '\\',
-                action = (i, tortoise, pushdown, tree, last, _params) =>
-                {
-                    float angle = (_params.Count > 0)
-                        ? _params[0]
-                        : UnityEngine.Random.Range(60f, 60f);
-
+                action = (i, tortoise, pushdown, tree, last, _params) => {
+                    float angle = (_params.Count > 0) ? _params[0] : UnityEngine.Random.Range(60f, 60f);
                     tortoise.Rotate(tortoise.forward, angle);
                     return last;
                 }
             },
-            new GenerationAction()
-            {
+            new GenerationAction() {
                 variable = '/',
-                action = (i, tortoise, pushdown, tree, last, _params) =>
-                {
-                    float angle = (_params.Count > 0)
-                        ? _params[0]
-                        : UnityEngine.Random.Range(60f, 60f);
-
+                action = (i, tortoise, pushdown, tree, last, _params) => {
+                    float angle = (_params.Count > 0) ? _params[0] : UnityEngine.Random.Range(60f, 60f);
                     tortoise.Rotate(tortoise.forward, -angle);
                     return last;
                 }
             }
         });
 
-        // Para símbolos que generan un Segmento (F, A, B, etc.), 
-        // invocamos SimpleGeneration y reasignamos 'last' a lo retornado.
-        // Pero aquí, en la Func, devolvemos directamente lo que retorne SimpleGeneration.
+        // Símbolos que generan un segmento: usamos SimpleGeneration.
         var symbols = new[] { 't', 'g', 'f', 'r', 'h', 'p' };
         foreach (var symbol in symbols)
         {
             toR.Add(new GenerationAction()
             {
                 variable = symbol,
-                action = (i, tortoise, pushdown, tree, last, exps) =>
-                {
-                    // Retornamos el nuevo substruct
+                action = (i, tortoise, pushdown, tree, last, exps) => {
                     return SimpleGeneration(i, tortoise, pushdown, tree, last, exps, symbol.ToString());
                 }
             });
         }
 
+        // Acciones explícitas para F, A, B y C (con C usando la lógica de B).
         toR.Add(new GenerationAction()
         {
             variable = 'F',
-            action = (i, t, p, tr, l, exps) =>
-            {
+            action = (i, t, p, tr, l, exps) => {
                 return SimpleGeneration(i, t, p, tr, l, exps, "F");
             }
         });
         toR.Add(new GenerationAction()
         {
             variable = 'A',
-            action = (i, t, p, tr, l, exps) =>
-            {
+            action = (i, t, p, tr, l, exps) => {
                 return SimpleGeneration(i, t, p, tr, l, exps, "A");
             }
         });
         toR.Add(new GenerationAction()
         {
             variable = 'B',
-            action = (i, t, p, tr, l, exps) =>
-            {
+            action = (i, t, p, tr, l, exps) => {
                 return SimpleGeneration(i, t, p, tr, l, exps, "B");
             }
         });
         toR.Add(new GenerationAction()
         {
             variable = 'C',
-            action = (i, t, p, tr, l, exps) =>
-            {
+            action = (i, t, p, tr, l, exps) => {
                 return SimpleGeneration(i, t, p, tr, l, exps, "B");
             }
         });
 
-        // Corchetes para push/pop del estado
-        // Al abrir corchete, guardamos pos/rot/last en la pila
+        // Corchetes: push y pop de la tortuga
         toR.AddRange(new[]
         {
-            new GenerationAction()
-            {
+            new GenerationAction() {
                 variable = '[',
-                action = (i, tortoise, pushdown, tree, last, exps) =>
-                {
-                    pushdown.Push(new tortoiseData()
-                    {
+                action = (i, tortoise, pushdown, tree, last, exps) => {
+                    pushdown.Push(new tortoiseData() {
                         pos = tortoise.position,
                         dir = tortoise.rotation.eulerAngles,
                         last = last.transform
                     });
-
-                    // '[' no crea un nuevo substruct, así que devolvemos 'last' sin cambios
                     return last;
                 }
             },
-            new GenerationAction()
-            {
+            new GenerationAction() {
                 variable = ']',
-                action = (i, tortoise, pushdown, tree, last, exps) =>
-                {
+                action = (i, tortoise, pushdown, tree, last, exps) => {
                     if (pushdown.Count > 0)
                     {
                         var t = pushdown.Pop();
                         tortoise.position = t.pos;
                         tortoise.rotation = Quaternion.Euler(t.dir);
-
-                        // Restauramos 'last' al substruct que había en la pila
                         var sub = t.last.GetComponent<SubStruct>();
                         return sub;
                     }
-                    return last;  // Por seguridad, si la pila está vacía
+                    return last;
                 }
             }
         });
@@ -283,52 +205,74 @@ public class Generator
 
     /// <summary>
     /// Genera el árbol 3D a partir de la cadena L-System.
-    /// Ahora recogemos lo que retorne la acción y reasignamos 'last'.
+    /// Procesa la cadena caracter a caracter. Si detecta un símbolo parametrizado,
+    /// extrae sus parámetros y, si hay un sufijo que comience con '#' después de los paréntesis,
+    /// lo interpreta como el uniqueId y lo asigna al SubStruct correspondiente.
     /// </summary>
     public TreeStruct GenerateTree(string value, Transform tortoise)
     {
         var pushdown = new Stack<tortoiseData>();
 
-        // Creamos el objeto raíz
+        // Crear el GameObject raíz para el árbol
         var root = new GameObject("Tree");
         var tree = root.AddComponent<TreeStruct>();
         tree.LSys = value;
-        Debug.Log(value);
-        // 'last' inicial es un SubStruct del root (vacío)
-        var last = root.AddComponent<SubStruct>();
+        Debug.Log("LSys: " + value);
 
-        // Recorremos la cadena
-        for (int i = 0; i < value.Length; i++)
+        // 'last' inicial es un SubStruct vacío en el root.
+        var last = root.AddComponent<SubStruct>();
+        last.uniqueId = Deriver.GenerateId(); // Asigna un ID al root
+        int i = 0;
+        while (i < value.Length)
         {
             char v = value[i];
             var actions = generationAction.Where(a => a.variable == v).ToList();
 
             if (Utils.IsParameterized(value, i))
             {
-                var subStr = value.Substring(i + 1);
-                var (param, end) = Utils.ExtractFromParentheses(subStr);
-
+                // Extrae el contenido entre paréntesis
+                string subStr = value.Substring(i + 1);
+                var (param, endIndex) = Utils.ExtractFromParentheses(subStr);
                 var exps = param.Split(';').Select(float.Parse).ToList();
 
+                // Procesar el símbolo parametrizado
                 if (actions.Count > 0 && actions[0].action != null)
                 {
-                    // Guardamos lo que retorna la acción
                     var newLast = actions[0].action(i, tortoise, pushdown, tree, last, exps);
                     if (newLast != null)
                         last = newLast;
                 }
 
-                i += (end + 1);
+                // Avanzar el índice hasta justo después del cierre de paréntesis
+                i += (endIndex + 2); // 1 para la letra, (endIndex + 1) para "(...)" 
+
+                // Procesar sufijos de ID consecutivos (por ejemplo, "#0", "#1", etc.)
+                while (i < value.Length && value[i] == '#')
+                {
+                    i++; // Salta el '#' 
+                    int idStart = i;
+                    while (i < value.Length && char.IsDigit(value[i]))
+                    {
+                        i++;
+                    }
+                    int idLength = i - idStart;
+                    if (idLength > 0)
+                    {
+                        int uniqueId = int.Parse(value.Substring(idStart, idLength));
+                        last.uniqueId = uniqueId;
+                    }
+                }
             }
             else
             {
-                // No parametrizado => sin exps
+                // Símbolo no parametrizado
                 if (actions.Count > 0 && actions[0].action != null)
                 {
                     var newLast = actions[0].action(i, tortoise, pushdown, tree, last, new List<float>());
                     if (newLast != null)
                         last = newLast;
                 }
+                i++;
             }
         }
 
@@ -339,65 +283,85 @@ public class Generator
     {
         var pushdown = new Stack<tortoiseData>();
 
-        // 1) Limpiamos la lista de subStructs anterior
+        // 1) Limpiar el TreeStruct existente (borrar hijos)
         existingTree.subStructs.Clear();
-        for (int i = existingTree.transform.childCount - 1; i >= 0; i--)
+        for (int k = existingTree.transform.childCount - 1; k >= 0; k--)
         {
-            Transform child = existingTree.transform.GetChild(i);
-            // Dentro de un script de editor, normalmente se usa DestroyImmediate.
-            // En runtime usaría Destroy(child.gameObject).
+            Transform child = existingTree.transform.GetChild(k);
             UnityEngine.Object.Destroy(child.gameObject);
         }
-        // Guardamos la nueva cadena
+        // Actualizar la cadena LSys
         existingTree.LSys = value;
-        Debug.Log(value);
+        Debug.Log("LSys: " + value);
 
-        // 2) Borramos cualquier SubStruct del root
-        // (opcional) si ya existía un "last" colgando
+        // 2) Destruir el SubStruct del root, si existe.
         var oldLast = existingTree.GetComponent<SubStruct>();
-        if (oldLast != null) UnityEngine.Object.Destroy(oldLast);
+        if (oldLast != null)
+            UnityEngine.Object.Destroy(oldLast);
 
-        // 3) Creamos un substruct “last” en el *mismo GameObject* 
+        // 3) Crear un nuevo SubStruct "last" en el mismo GameObject.
         var last = existingTree.gameObject.AddComponent<SubStruct>();
 
-        // 4) Recorremos la cadena
-        for (int i = 0; i < value.Length; i++)
+        // 4) Procesar la cadena LSys
+        int pos = 0;
+        while (pos < value.Length)
         {
-            char v = value[i];
+            char v = value[pos];
             var actions = generationAction.Where(a => a.variable == v).ToList();
 
-            if (Utils.IsParameterized(value, i))
+            if (Utils.IsParameterized(value, pos))
             {
-                var subStr = value.Substring(i + 1);
+                // Extrae el bloque de parámetros
+                string subStr = value.Substring(pos + 1);
                 var (param, end) = Utils.ExtractFromParentheses(subStr);
                 var exps = param.Split(';').Select(float.Parse).ToList();
 
                 if (actions.Count > 0 && actions[0].action != null)
                 {
-                    var newLast = actions[0].action(i, tortoise, pushdown, existingTree, last, exps);
+                    var newLast = actions[0].action(pos, tortoise, pushdown, existingTree, last, exps);
                     if (newLast != null)
                         last = newLast;
                 }
-                i += (end + 1);
+
+                // Avanzar pos: 1 (letra) + (end+1) para el bloque entre paréntesis.
+                pos += (end + 2);
+
+                // Procesar sufijos de ID consecutivos, si existen.
+                while (pos < value.Length && value[pos] == '#')
+                {
+                    pos++; // Saltar el '#'
+                    int idStart = pos;
+                    while (pos < value.Length && char.IsDigit(value[pos]))
+                    {
+                        pos++;
+                    }
+                    int idLength = pos - idStart;
+                    if (idLength > 0)
+                    {
+                        int uniqueId = int.Parse(value.Substring(idStart, idLength));
+                        last.uniqueId = uniqueId;
+                    }
+                }
             }
             else
             {
                 if (actions.Count > 0 && actions[0].action != null)
                 {
-                    var newLast = actions[0].action(i, tortoise, pushdown, existingTree, last, new List<float>());
+                    var newLast = actions[0].action(pos, tortoise, pushdown, existingTree, last, new List<float>());
                     if (newLast != null)
                         last = newLast;
                 }
+                pos++;
             }
         }
-
         return existingTree;
     }
+
+
 }
 
 /// <summary>
-/// Clase para almacenar la posición y rotación
-/// y el 'last' transform cuando abrimos corchetes.
+/// Clase para almacenar la posición, rotación y el "last" transform cuando se hace push/pop.
 /// </summary>
 public class tortoiseData
 {
