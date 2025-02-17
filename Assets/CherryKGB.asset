@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41f33ff2bf902304eb4748cd9b7e84ba, type: 3}
+  m_Name: CherryKGB
+  m_EditorClassIdentifier: 
+  rules:
+  - input: A(x)
+    output: F[+30B(x)B(x)][-30B(x)B(x)][&45B(x)B(x)][^45B(x)B(x)]A(0)A(0)A(0)
+    condition: x > 0
+    weight: 0
+  - input: A(x)
+    output: 
+    condition: x <= 0
+    weight: 0
+  - input: B(x)
+    output: F[+B(x-1)B(x-1)][-B(x-1)B(x-1)][&B(x-1)B(x-1)][^B(x-1)B(x-1)]
+    condition: x > 0
+    weight: 0
+  - input: B(x)
+    output: F
+    condition: x <= 0
+    weight: 0
+  generalVariables: []
+  isStochastic: 0

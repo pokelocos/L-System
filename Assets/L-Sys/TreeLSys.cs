@@ -26,6 +26,9 @@ public class TreeLSys : MonoBehaviour
 
     // Generador para la representación 3D
     public Generator generator = new();
+
+
+
 }
 
 
