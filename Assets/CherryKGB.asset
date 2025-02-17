@@ -22,11 +22,11 @@ MonoBehaviour:
     condition: x <= 0
     weight: 0
   - input: B(x)
-    output: F[+B(x-1)B(x-1)][-B(x-1)B(x-1)][&B(x-1)B(x-1)][^B(x-1)B(x-1)]
+    output: F(0)[+B(x-1)B(x-1)][-B(x-1)B(x-1)][&B(x-1)B(x-1)][^B(x-1)B(x-1)]
     condition: x > 0
     weight: 0
   - input: B(x)
-    output: F
+    output: F(0)
     condition: x <= 0
     weight: 0
   generalVariables: []
