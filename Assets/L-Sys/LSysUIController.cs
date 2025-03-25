@@ -38,7 +38,7 @@ public class LSysUIController : MonoBehaviour
             Debug.LogWarning("Generator is not assigned!");
             return;
         }
-        transform.position = Vector3.zero;
+        //transform.position = Vector3.zero;
         var _pos = transform.position + Vector3.zero;
         var _dir = transform.rotation;
         // Deriva la cadena actual 1 iteración
@@ -51,6 +51,8 @@ public class LSysUIController : MonoBehaviour
         // Destruir el árbol anterior
         var oldTree = GameObject.Find("Tree1").GetComponent<TreeStruct>();
 
+        transform.position = oldTree.transform.position;
+        transform.rotation = oldTree.transform.rotation;
         generator.generationAction = generator.InitGenerateAction();
         // Generar el nuevo árbol
         generator.GenerateTreeOnExisting(oldTree, newChain, this.transform);

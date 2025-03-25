@@ -4,7 +4,6 @@ using UnityEngine;
 using System.Linq;
 using UnityEditor;
 using UnityEngine.UIElements;
-using UnityEditor.UIElements;
 
 /// <summary>
 /// Clase principal para el sistema de árbol L-System.
@@ -26,7 +25,7 @@ public class TreeLSys : MonoBehaviour
 
     // Generador para la representación 3D
     public Generator generator = new();
-
+    
 
 
 }

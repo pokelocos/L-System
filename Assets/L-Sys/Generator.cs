@@ -13,12 +13,10 @@ public class Generator
         public string name;
         public List<GameObject> prefs;
     }
-
     public float alphaAngle = 45f;
     public float betaAngle = 60f;
     public float segmentSize = 1f;
     public List<PrefPairs> prefPairs = new();
-
     /// <summary>
     /// Cada acción retorna el nuevo SubStruct creado (o el mismo 'last' si no se crea nada nuevo).
     /// </summary>
@@ -29,7 +27,6 @@ public class Generator
         public Func<int, Transform, Stack<tortoiseData>, TreeStruct, SubStruct, List<float>, SubStruct> action;
     }
     public List<GenerationAction> generationAction = new();
-
     /// <summary>
     /// Instancia y configura un segmento (prefab) para el símbolo dado, y devuelve el SubStruct creado.
     /// </summary>
@@ -202,7 +199,6 @@ public class Generator
 
         return toR;
     }
-
     /// <summary>
     /// Genera el árbol 3D a partir de la cadena L-System.
     /// Procesa la cadena caracter a caracter. Si detecta un símbolo parametrizado,
@@ -356,10 +352,7 @@ public class Generator
         }
         return existingTree;
     }
-
-
 }
-
 /// <summary>
 /// Clase para almacenar la posición, rotación y el "last" transform cuando se hace push/pop.
 /// </summary>

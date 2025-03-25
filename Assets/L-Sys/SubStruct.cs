@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -35,6 +37,10 @@ public class SubStruct : MonoBehaviour
         cutRoot.transform.position = transform.position;
         cutRoot.transform.rotation = transform.rotation;
 
+        // Agregar XR Grab Interactable para manipulación en VR.
+        // Asegúrate de tener "using UnityEngine.XR.Interaction.Toolkit;" al inicio.
+
+
         // 2) Re-parent la rama cortada: obtener todos los SubStruct de esta rama.
         var subs = GetAllChildRecursive(this.transform);
         subs.Add(this); // Incluir el propio SubStruct que invoca el corte.
@@ -48,7 +54,7 @@ public class SubStruct : MonoBehaviour
 #if UNITY_EDITOR
                 Undo.DestroyObjectImmediate(childRb);
 #else
-                Destroy(childRb);
+            Destroy(childRb);
 #endif
             }
             sub.transform.SetParent(cutRoot.transform, true);
@@ -74,11 +80,24 @@ public class SubStruct : MonoBehaviour
         // 4) Actualizar los uniqueId de cada SubStruct según la nueva cadena LSys.
         parent.UpdateSubStructIdsFromLSys();
 
+        cutRoot.AddComponent<XRGrabInteractable>();
+        var grabInteractable = cutRoot.GetComponent<XRGrabInteractable>();
+        grabInteractable.enabled = false;
+        grabInteractable.enabled = true;
+        // Tras reparentar, obtén todos los colliders del cutRoot
+        Collider[] childColliders = cutRoot.GetComponentsInChildren<Collider>();
+
+        // Si necesitas usarlos para alguna lógica custom o debug, puedes hacerlo aquí:
+        foreach (var col in childColliders)
+        {
+            Debug.Log("Collider encontrado: " + col.name);
+        }
 #if UNITY_EDITOR
         parent.subStructs.RemoveAll(x => x == null);
         EditorUtility.SetDirty(parent);
 #endif
     }
+
 
     /// <summary>
     /// Recorre recursivamente los hijos de este objeto y devuelve todos los SubStruct encontrados.

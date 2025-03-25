@@ -1,7 +1,14 @@
 {
     "name": "LSys",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Unity.TextMeshPro",
+        "Oculus.VR",
+        "Oculus.Interaction",
+        "UnityEditor.UI",
+        "UnityEngine.UI",
+        "Unity.XR.Interaction.Toolkit"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

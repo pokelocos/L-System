@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
-[UnityEditor.CustomEditor(typeof(TreeLSys))]
-public class TreeLSysEditor : UnityEditor.Editor
+[CustomEditor(typeof(TreeLSys))]
+public class TreeLSysEditor : Editor
 {
     /// <summary>
     /// Personalización del Inspector para TreeLSys.
@@ -24,7 +25,7 @@ public class TreeLSysEditor : UnityEditor.Editor
         GUIStyle boxStyle = new GUIStyle(EditorStyles.helpBox)
         {
             normal = { background = MakeTex(2, 2, new Color(0.15f, 0.15f, 0.15f)) },
-            padding = new RectOffset(10, 10, 10, 10)
+            padding = new RectOffset(20, 20, 20, 20)
         };
 
         // Botón para generar derivaciones
@@ -35,7 +36,8 @@ public class TreeLSysEditor : UnityEditor.Editor
 
             Debug.Log("Start derive");
             // 2) Imprime en la consola "Start derive", para indicar que inicia el proceso de derivación del L-System.
-
+            // Inicia el cronómetro
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             // Derivar el árbol gramatical
             var generations = Deriver.Derive(sys.grammarTree, sys.startInput, sys.generations);
             // 3) Llama al método estático "Derive" de la clase "Deriver".
@@ -63,8 +65,9 @@ public class TreeLSysEditor : UnityEditor.Editor
 
             Debug.Log("Axiom: " + axiom);
             // 8) Muestra específicamente el axioma final, para facilidad de lectura.
-
-            Debug.Log("Output generated");
+            // Detener el cronómetro y mostrar el tiempo transcurrido
+            stopwatch.Stop();
+            Debug.Log("Output generated in " + stopwatch.ElapsedMilliseconds + " ms");
             // 9) Imprime un mensaje final confirmando que el proceso de derivación ha terminado.
         }
 
@@ -107,3 +110,4 @@ public class TreeLSysEditor : UnityEditor.Editor
         return result;
     }
 }
+#endif
