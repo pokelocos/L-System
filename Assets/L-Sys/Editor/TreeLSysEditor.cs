@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
@@ -47,9 +49,13 @@ public class TreeLSysEditor : Editor
             //    Devuelve una lista de strings, donde cada elemento corresponde 
             //    al resultado en cada generación.
 
+            
             var axiom = generations[generations.Count - 1];
             // 4) Toma el último string de la lista "generations", 
             //    que representa la cadena final tras todas las derivaciones.
+
+            // Recalcula los IDs sobre el axioma final.
+            axiom = Deriver.RecalculateUniqueIds(axiom);
 
             sys.output = axiom;
             // 5) Asigna ese último string al campo "output" del componente "TreeLSys"
@@ -94,6 +100,8 @@ public class TreeLSysEditor : Editor
             Debug.Log("Output generated in 3D");
         }
     }
+
+
 
     /// <summary>
     /// Crea una textura sólida para estilos de GUI.

@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41f33ff2bf902304eb4748cd9b7e84ba, type: 3}
+  m_Name: Parametric KGB
+  m_EditorClassIdentifier: 
+  rules:
+  - input: A(w;L)
+    output: 'A(w+trunkIncrement; L+trunkLengthIncrement) '
+    condition: 'w < maxTrunkWidth '
+    weight: 1
+  - input: A(w;L)
+    output: 'A(w;L)[+(branchAngle)B(branchStartW;branchStartL)][-(branchAngle)B(branchStartW;branchStartL)][^(branchAngle)B(branchStartW;branchStartL)][&(branchAngle)B(branchStartW;branchStartL)] '
+    condition: 'w >= maxTrunkWidth '
+    weight: 1
+  - input: B(w;L)
+    output: 'B(w*branchTaper; L+branchGrowth) '
+    condition: 'L < maxBranchLength '
+    weight: 1
+  - input: B(w;L)
+    output: B(w;L) [+(branchAngle)B(branchStartW;branchStartL)][-(branchAngle)B(branchStartW;branchStartL)][^(branchAngle)B(branchStartW;branchStartL)][&(branchAngle)B(branchStartW;branchStartL)]
+    condition: 'L >= maxBranchLength '
+    weight: 1
+  generalVariables:
+  - variable: maxTrunkWidth
+    value: 0.5
+  - variable: trunkIncrement
+    value: 0.2
+  - variable: trunkLengthIncrement
+    value: 0.5
+  - variable: branchStartW
+    value: 0.3
+  - variable: branchStartL
+    value: 0.12
+  - variable: branchTaper
+    value: 0.7
+  - variable: branchGrowth
+    value: 0.25
+  - variable: maxBranchLength
+    value: 0.4
+  - variable: branchAngle
+    value: 30
+  isStochastic: 1

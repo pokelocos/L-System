@@ -39,30 +39,65 @@ public class Generator
         List<float> _params,
         string value)
     {
-        float segSize = this.segmentSize;
+        // Valores predeterminados en caso de que no se provean parámetros
+        float width = 1f;               // Valor por defecto para el grosor
+        float length = segmentSize;     // Valor por defecto para la longitud
+
+        // Si se proporcionan parámetros y son al menos 2, asume:
+        // - _params[0]: ancho (w)
+        // - _params[1]: longitud (L)
+        if (_params != null && _params.Count >= 2)
+        {
+            width = _params[0];
+            length = _params[1];
+        }
+
+        // Buscar el prefab asociado al símbolo (por ejemplo, "F", "A", etc.)
         var tPart = prefPairs.FirstOrDefault(t => t.name == value);
         if (tPart == null || tPart.prefs.Count == 0)
         {
             Debug.LogWarning($"No Prefab found for value: {value}");
             return last;
         }
+
+        // Instanciar el prefab en la posición actual de la tortuga.
         var part = GameObject.Instantiate(tPart.prefs[0], tortoise.position, Quaternion.identity);
         part.transform.SetParent(last.transform, worldPositionStays: true);
+
+        // Asegurarse de que el objeto padre tenga escala (1,1,1)
         part.transform.localScale = Vector3.one;
-        var newScale = part.transform.localScale;
-        newScale.y = segSize;
-        part.transform.localScale = newScale;
+        // Acceder al primer hijo del prefab y asignarle la escala deseada:
+        // Se asigna 'width' a X y Y, y 'length' a Z.
+        Transform child = part.transform.GetChild(0);
+        child.localScale = new Vector3(width, width, length);
+
+        // Alinear el prefab de modo que su eje Z (forward) se oriente según la dirección de la tortuga.
         part.transform.up = tortoise.up;
 
+        // Agregar el componente SubStruct y guardar los parámetros si se requiere.
         var sub = part.AddComponent<SubStruct>();
-        sub.size = segSize;
-        sub.parent = tree;
-        // Aquí podrías asignar otros valores (como orderIndex si lo necesitas)
+        sub.size = length;
         tree.subStructs.Add(sub);
 
-        tortoise.position += tortoise.up * segSize;
+        // Calcular el desplazamiento real basado en la longitud del objeto hijo (eje Z):
+        Renderer rend = child.GetComponent<Renderer>();
+        if (rend != null)
+        {
+            float actualLength = rend.bounds.size.y;
+            // Mover la tortuga en la dirección en la que se ha orientado el prefab.
+            tortoise.position += tortoise.up * actualLength;
+        }
+        else
+        {
+            // Sino, usar la longitud definida.
+            tortoise.position += tortoise.up * length;
+        }
+
         return sub;
     }
+
+
+
 
     /// <summary>
     /// Inicializa las acciones para cada símbolo.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using NCalc;  // Se usa para evaluar expresiones lógicas y matemáticas con parámetros.
+using System.Text.RegularExpressions;   
 /// <summary>
 /// Representa un conjunto de reglas de un L-System, incluyendo variables globales
 /// y la posibilidad de que sea un sistema estocástico.
@@ -97,7 +98,7 @@ public class GrammarTree : ScriptableObject
         {
             string resultString = "";
 
-            // Ej: si input = "F(x,y)", iParms = { "x", "y" }
+            // Ej: si input = "F(w;L)", iParms = { "w", "L" }
             var iSub = input.Substring(1);
             var (extractedParams, _) = ParametrizedUtilities.ExtractFromParentheses(iSub);
             var iParms = extractedParams.Split(';');
@@ -151,16 +152,16 @@ public class GrammarTree : ScriptableObject
                     // Cierra paréntesis
                     resultString += ")";
 
-                    // ---- COMENTARIO NUEVO ----
-                    // Ahora agregamos "#ID" si el símbolo es uno de los paramSymbols (F, B, A, G...).
-                    // output[i] es la letra que detectamos, ej 'B' o 'A'.
+                    // --- BLOQUE DE ASIGNACIÓN DE ID COMENTADO ---
+                    /*
                     if (paramSymbols.Contains(output[i]))
                     {
                         int newId = Deriver.GenerateId();
                         // Insertamos el ID
                         resultString += "#" + newId;
                     }
-                    // ---- FIN CAMBIO ----
+                    */
+                    // --- FIN BLOQUE ---
 
                     // Avanza el índice 'i' para saltar la parte de paréntesis ya procesada.
                     i += (end + 1);
@@ -174,6 +175,7 @@ public class GrammarTree : ScriptableObject
 
             return resultString;
         }
+
     }
 
     /// <summary>
@@ -216,4 +218,7 @@ public class GrammarTree : ScriptableObject
 
         return matchedRules;
     }
+
+
+
 }
