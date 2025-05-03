@@ -7,7 +7,9 @@
         "Oculus.Interaction",
         "UnityEditor.UI",
         "UnityEngine.UI",
-        "Unity.XR.Interaction.Toolkit"
+        "Unity.XR.Interaction.Toolkit",
+        "Core",
+        "Outline"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

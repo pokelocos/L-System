@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Antlr.Runtime.Tree;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Hardware;
 using UnityEngine;
 using Utils = ParametrizedUtilities;
 
@@ -77,6 +79,7 @@ public class Generator
         // Agregar el componente SubStruct y guardar los parámetros si se requiere.
         var sub = part.AddComponent<SubStruct>();
         sub.size = length;
+        sub.parent = tree;
         tree.subStructs.Add(sub);
 
         // Calcular el desplazamiento real basado en la longitud del objeto hijo (eje Z):
@@ -252,6 +255,7 @@ public class Generator
 
         // 'last' inicial es un SubStruct vacío en el root.
         var last = root.AddComponent<SubStruct>();
+        last.parent = tree;
         last.uniqueId = Deriver.GenerateId(); // Asigna un ID al root
         int i = 0;
         while (i < value.Length)
@@ -332,7 +336,7 @@ public class Generator
 
         // 3) Crear un nuevo SubStruct "last" en el mismo GameObject.
         var last = existingTree.gameObject.AddComponent<SubStruct>();
-
+        last.parent = existingTree;
         // 4) Procesar la cadena LSys
         int pos = 0;
         while (pos < value.Length)
