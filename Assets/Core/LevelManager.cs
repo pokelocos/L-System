@@ -3,9 +3,9 @@ using UnityEngine.SceneManagement;
 
 public class LevelManager : MonoBehaviour
 {
-    public void OnFinishLevel()
+    public void OnFinishLevel(int levelIndex)
     {
         SessionManager.Instance.EndSessionAndSave();   // escribe CSV
-        SceneManager.LoadScene(0);                     // volver al menú (idx 0)
+        SceneManager.LoadScene(levelIndex);            // volver al menú (idx 0)
     }
 }

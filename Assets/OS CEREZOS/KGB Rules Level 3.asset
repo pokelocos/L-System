@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rules:
   - input: T(w;L)
-    output: F(w;0.15)T(w+trunkIncrement; L+trunkLengthIncrement)
+    output: F(w;0.45)T(w+trunkIncrement; L+trunkLengthIncrement)
     condition: w < maxTrunkWidth
     weight: 1
   - input: T(w;L)
-    output: F(w;0.15)[+(branchAngle) P(w*branchTaper ; branchStartL ; 0)] [-(branchAngle)
+    output: F(w;0.45)[+(branchAngle) P(w*branchTaper ; branchStartL ; 0)] [-(branchAngle)
       P(w*branchTaper ; branchStartL ; 0)] [^(branchAngle) P(w*branchTaper ; branchStartL
       ; 0)] [&(branchAngle) P(w*branchTaper ; branchStartL ; 0)]
     condition: w >= maxTrunkWidth
@@ -44,9 +44,8 @@ MonoBehaviour:
     weight: 1
   - input: S(w;L;a)
     output: F(w;branchGrowth) [+(branchAngle) S(w*branchTaper ; branchStartL*secScale
-      ; 0)] [-(branchAngle) S(w*branchTaper ; branchStartL*secScale ; 0)] [^(branchAngle)
-      S(w*branchTaper ; branchStartL*secScale ; 0)] [&(branchAngle) S(w*branchTaper
-      ; branchStartL*secScale ; 0)] S(w*branchTaper ; L*secScale ; a+1)
+      ; 0)] [-(branchAngle) S(w*branchTaper ; branchStartL*secScale ; 0)] S(w*branchTaper
+      ; L*secScale ; a+1)
     condition: L >= maxBranchLength &&  a < 2
     weight: 1
   - input: S(w;L;a)
@@ -55,23 +54,23 @@ MonoBehaviour:
     weight: 1
   generalVariables:
   - variable: maxTrunkWidth
-    value: 0.2
+    value: 0.45
   - variable: trunkIncrement
-    value: 0.1
+    value: 0.04
   - variable: trunkLengthIncrement
     value: 0.5
   - variable: branchStartW
     value: 0.1
   - variable: branchStartL
-    value: 0.1
+    value: 0.4
   - variable: branchTaper
-    value: 0.5
+    value: 0.75
   - variable: branchGrowth
-    value: 0.15
+    value: 0.5
   - variable: maxBranchLength
-    value: 0.1
+    value: 0.7
   - variable: branchAngle
-    value: 30
+    value: 25
   - variable: secScale
     value: 1.5
   isStochastic: 0

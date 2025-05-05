@@ -54,13 +54,17 @@ public class SessionManager : MonoBehaviour
     /* ───────── Fin de nivel / Guardar CSV ───────── */
     public void EndSessionAndSave()
     {
-        CsvWriter.AppendLine(playerID, currentLevel, ElapsedTime,
-                             AllCuts, correctCuts);
+        CsvWriter.AppendLine(playerID, currentLevel,
+                             ElapsedTime,        // time
+                             AllCuts,            // allCuts
+                             correctCuts,        // correctCuts
+                             errors);            // errors
     }
+
 }
 
 /* ================================================================= */
-/*  CSV helper muy simple                                            */
+/*  CSV    */
 /* ================================================================= */
 static class CsvWriter
 {
@@ -68,16 +72,18 @@ static class CsvWriter
     static readonly string path = Path.Combine(dir, "metrics.csv");
 
     public static void AppendLine(string id, int level, float time,
-                                  int allCuts, int correctCuts)
+                                  int allCuts, int correctCuts, int errors)
     {
         float precision = allCuts == 0 ? 0f : (float)correctCuts / allCuts;
 
+        /* Cabecera ─ se crea una única vez */
         if (!File.Exists(path))
             File.WriteAllText(path,
-              "PlayerID,Level,Time_s,AllCuts,CorrectCuts,Precision\n");
+              "PlayerID,Level,Time_s,AllCuts,CorrectCuts,Errors,Precision\n");
 
+        /* Datos */
         string line =
-            $"{id},{level},{time:F1},{allCuts},{correctCuts},{precision:P1}\n";
+            $"{id},{level},{time:F1},{allCuts},{correctCuts},{errors},{precision:P1}\n";
 
         File.AppendAllText(path, line);
 
