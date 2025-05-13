@@ -1,6 +1,7 @@
 ﻿// Assets/Scripts/SessionManager.cs
 using System;                        // Guid
 using System.IO;
+using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -37,8 +38,10 @@ public class SessionManager : MonoBehaviour
     }
 
     /* ───────── Arrancar un nivel ───────── */
+    /* ───────── Empieza un nivel ───────── */
     public void StartNewLevel(int levelBuildIndex)
     {
+        // 2) reset para el nuevo nivel
         currentLevel = levelBuildIndex;
         startTime = Time.time;
         correctCuts = 0;
@@ -72,20 +75,23 @@ static class CsvWriter
     static readonly string path = Path.Combine(dir, "metrics.csv");
 
     public static void AppendLine(string id, int level, float time,
-                                  int allCuts, int correctCuts, int errors)
+                              int allCuts, int correctCuts, int errors)
     {
         float precision = allCuts == 0 ? 0f : (float)correctCuts / allCuts;
 
-        /* Cabecera ─ se crea una única vez */
+        // Línea a escribir
+        string line = $"{id},{level},{time:F1},{allCuts},{correctCuts},{errors},{precision:P1}\n";
+
+        // Crear cabecera si no existe
         if (!File.Exists(path))
-            File.WriteAllText(path,
-              "PlayerID,Level,Time_s,AllCuts,CorrectCuts,Errors,Precision\n");
-
-        /* Datos */
-        string line =
-            $"{id},{level},{time:F1},{allCuts},{correctCuts},{errors},{precision:P1}\n";
-
-        File.AppendAllText(path, line);
+        {
+            string header = "PlayerID,Level,Time_s,AllCuts,CorrectCuts,Errors,Precision\n";
+            File.WriteAllText(path, header + line, new UTF8Encoding(true)); // <-- BOM activado
+        }
+        else
+        {
+            File.AppendAllText(path, line); // Esto usa la codificación por defecto
+        }
 
         Debug.Log($"[CsvWriter] Saved metrics to {path}");
     }
