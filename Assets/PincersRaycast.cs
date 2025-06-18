@@ -49,16 +49,18 @@ public class PincersRaycast : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, rayDistance, layerToCut))
         {
+            
             // Actualiza la posición final del Line Renderer al punto de impacto.
             if (lineRenderer != null)
             {
                 lineRenderer.SetPosition(1, hit.point);
             }
-
+            
             // Buscar el SubStruct en el objeto impactado o en sus padres.
             var sub = hit.collider.GetComponentInParent<SubStruct>();
             if (sub != null)
             {
+                SoundManager.Instance.ReproducirSonidoAleatorioCortar();
                 sub.CutCompoundWithCapsules();
             }
             else

@@ -1,7 +1,8 @@
 ﻿// Assets/Scripts/SessionManager.cs
-using System;                        // Guid
+using System;
 using System.IO;
 using System.Text;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,16 +10,24 @@ public class SessionManager : MonoBehaviour
 {
     public static SessionManager Instance { get; private set; }
 
-    /* ───────── Datos persistentes (por arranque) ───────── */
+    /* ───────── Config ───────── */
+    [Tooltip("BuildIndex de la(s) escena(s) cuya métrica NO debe guardarse.")]
+    [SerializeField] int tutorialSceneIndex = 0;      // ← aquí tu escena-tutorial
+    // Si quieres excluir varias, usa un int[] o una List<int>.
+
+    /* ───────── Datos persistentes ───────── */
     public string playerID;                  // GUID único por ejecución
 
     /* ───────── Datos por nivel ───────── */
-    public int currentLevel;              // 1,2,3…
-    public float startTime;                 // Time.time al entrar al nivel
-    public int correctCuts;               // cortes “buenos”
-    public int errors;                    // cortes “malos”
+    public int currentLevel;   // 1,2,3…
+    public float startTime;
+    public int correctCuts;
+    public int errors;
     public int AllCuts => correctCuts + errors;
     public float ElapsedTime => Time.time - startTime;
+
+    /* ───────── Interno ───────── */
+    bool recordMetrics = true;   // ← se desactiva en tutorial
 
     /* ───────── Singleton ───────── */
     void Awake()
@@ -38,59 +47,63 @@ public class SessionManager : MonoBehaviour
     }
 
     /* ───────── Arrancar un nivel ───────── */
-    /* ───────── Empieza un nivel ───────── */
     public void StartNewLevel(int levelBuildIndex)
     {
-        // 2) reset para el nuevo nivel
         currentLevel = levelBuildIndex;
         startTime = Time.time;
         correctCuts = 0;
         errors = 0;
 
+        /* ¿Se deben grabar métricas? */
+        recordMetrics = (levelBuildIndex != tutorialSceneIndex);
+
         SceneManager.LoadScene(levelBuildIndex);
     }
 
     /* ───────── Registro de cortes ───────── */
-    public void RegisterCorrectCut() => correctCuts++;
-    public void RegisterError() => errors++;
+    public void RegisterCorrectCut() { if (recordMetrics) correctCuts++; }
+    public void RegisterError() { if (recordMetrics) errors++; }
 
     /* ───────── Fin de nivel / Guardar CSV ───────── */
     public void EndSessionAndSave()
     {
-        CsvWriter.AppendLine(playerID, currentLevel,
-                             ElapsedTime,        // time
-                             AllCuts,            // allCuts
-                             correctCuts,        // correctCuts
-                             errors);            // errors
-    }
+        if (!recordMetrics) return;   // ← nada que guardar
 
+        CsvWriter.AppendLine(playerID, currentLevel,
+                             ElapsedTime,
+                             AllCuts,
+                             correctCuts,
+                             errors);
+    }
 }
 
 /* ================================================================= */
-/*  CSV    */
+/*  CSV writer (sin cambios)                                         */
 /* ================================================================= */
 static class CsvWriter
 {
     static readonly string dir = Application.persistentDataPath;
     static readonly string path = Path.Combine(dir, "metrics.csv");
+    static readonly CultureInfo CsvCulture = CultureInfo.InvariantCulture;
+    static readonly UTF8Encoding Utf8Bom = new UTF8Encoding(true);
 
     public static void AppendLine(string id, int level, float time,
-                              int allCuts, int correctCuts, int errors)
+                                  int allCuts, int correctCuts, int errors)
     {
         float precision = allCuts == 0 ? 0f : (float)correctCuts / allCuts;
 
-        // Línea a escribir
-        string line = $"{id},{level},{time:F1},{allCuts},{correctCuts},{errors},{precision:P1}\n";
+        string line = string.Format(CsvCulture,
+            "{0},{1},{2:F1},{3},{4},{5},{6:P1}\n",
+            id, level, time, allCuts, correctCuts, errors, precision);
 
-        // Crear cabecera si no existe
         if (!File.Exists(path))
         {
             string header = "PlayerID,Level,Time_s,AllCuts,CorrectCuts,Errors,Precision\n";
-            File.WriteAllText(path, header + line, new UTF8Encoding(true)); // <-- BOM activado
+            File.WriteAllText(path, header + line, Utf8Bom);
         }
         else
         {
-            File.AppendAllText(path, line); // Esto usa la codificación por defecto
+            File.AppendAllText(path, line, Utf8Bom);
         }
 
         Debug.Log($"[CsvWriter] Saved metrics to {path}");
